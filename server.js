@@ -14,7 +14,7 @@ const MONGODB_URI = process.env.MONGODB_URI || "";
 app.use(
   cors({
     origin: [
-      "https://your-netlify-site-name.netlify.app", // 👈 YAHAN APNE ASLI NETLIFY SITE KA URL PRECISELY PASTE KAREIN (bina aakhiri '/' ke)
+      "https://zingy-starburst-b26da1.netlify.app/", // 👈 YAHAN APNE ASLI NETLIFY SITE KA URL PRECISELY PASTE KAREIN (bina aakhiri '/' ke)
       "http://localhost:5173", // Vite (React) local development ke liye
       "http://localhost:3000", // Normal local development ke liye
     ],
