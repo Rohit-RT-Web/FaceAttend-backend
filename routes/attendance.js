@@ -40,7 +40,7 @@ router.post("/mark", async (req, res) => {
       department: student.department,
       class: student.class,
       date: today,
-      time: time,
+      time: (currentTime = moment().format("HH:mm:ss")),
       status: isLate ? "Late" : "Present",
       method: method || "Face Recognition",
       confidence: confidence || 0,
