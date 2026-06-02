@@ -9,43 +9,26 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || "";
 
-// ================= MIDDLEWARE & CORS CONFIGURATION =================
-// Netlify se aane waale requests ko allow karne ke liye CORS setup kiya hai
-app.use(
-  cors({
-    origin: [
-      "https://zingy-starburst-b26da1.netlify.app/", // 👈 YAHAN APNE ASLI NETLIFY SITE KA URL PRECISELY PASTE KAREIN (bina aakhiri '/' ke)
-      "http://localhost:5173", // Vite (React) local development ke liye
-      "http://localhost:3000", // Normal local development ke liye
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
-
+// Middleware
+app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-// Static files and uploads setup
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Create uploads directory if it does not exist
-if (!fs.existsSync("uploads")) {
-  fs.mkdirSync("uploads", { recursive: true });
-}
+// Create uploads directory if not exists
+if (!fs.existsSync("uploads")) fs.mkdirSync("uploads", { recursive: true });
 
-// ================= MONGOOSE DATABASE CONNECTION =================
+// MongoDB Connection
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
-    console.log("✅ MongoDB Connected Successfully");
+    console.log("✅ MongoDB Connected:", MONGODB_URI);
   })
   .catch((err) => {
     console.error("❌ MongoDB Connection Error:", err.message);
     console.log(
-      "⚠️ Server running without database - some features may not work",
+      "⚠️  Server running without database - some features may not work",
     );
   });
 
@@ -54,12 +37,11 @@ mongoose.connection.on("disconnected", () =>
   console.log("MongoDB Disconnected"),
 );
 
-// ================= API ROUTES =================
+// API Routes
 app.use("/api/students", require("./routes/students"));
 app.use("/api/attendance", require("./routes/attendance"));
 
-// ================= HEALTH CHECK ROUTE =================
-// Frontend (.js file) isi route ko hit karke database check karta hai
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -69,35 +51,22 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ================= ROOT & FALLBACK ROUTES =================
-// Jab Frontend Netlify par alag chal raha ho, to backend ke main URL par yeh message dikhega
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Face Attendance System API is running smoothly!",
-  });
-});
-
-// Galat API paths ke liye 404 handler
+// Serve frontend
 app.get("*", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Requested API route not found on this server.",
-  });
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ================= GLOBAL ERROR HANDLER =================
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-  });
+  res
+    .status(500)
+    .json({ success: false, message: err.message || "Internal Server Error" });
 });
 
-// ================= SERVER START =================
 app.listen(PORT, () => {
-  console.log(`🚀 Server running successfully on port: ${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`📊 Dashboard: http://localhost:${PORT}`);
 });
 
 module.exports = app;
