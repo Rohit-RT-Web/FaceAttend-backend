@@ -1,8 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const moment = require("moment");
+// moment ko badal kar moment-timezone kiya taaki India (IST) ka sahi time aaye
+const moment = require("moment-timezone");
 const Attendance = require("../models/Attendance");
 const Student = require("../models/Student");
+
+// Ek constant define kar dete hain India timezone ke liye
+const INDIA_TZ = "Asia/Kolkata";
 
 // POST mark attendance
 router.post("/mark", async (req, res) => {
@@ -15,8 +19,9 @@ router.post("/mark", async (req, res) => {
         .status(404)
         .json({ success: false, message: "Student not found" });
 
-    const today = moment().format("YYYY-MM-DD");
-    const time = moment().format("HH:mm:ss");
+    // YAHAN BADLAAV KIYA: Ab ye server ke time ki jagah humesha IST date aur time lega
+    const today = moment().tz(INDIA_TZ).format("YYYY-MM-DD");
+    const time = moment().tz(INDIA_TZ).format("HH:mm:ss");
 
     // Check if already marked today
     const existing = await Attendance.findOne({ studentId, date: today });
@@ -28,9 +33,10 @@ router.post("/mark", async (req, res) => {
       });
     }
 
-    // Determine status based on time (Late if after 9:30 AM)
-    const hour = moment().hour();
-    const minute = moment().minute();
+    // YAHAN BADLAAV KIYA: Late check karne ke liye bhi IST ka hour aur minute nikal rahe hain
+    const nowIST = moment().tz(INDIA_TZ);
+    const hour = nowIST.hour();
+    const minute = nowIST.minute();
     const isLate = hour > 9 || (hour === 9 && minute > 30);
 
     const attendance = new Attendance({
@@ -40,7 +46,7 @@ router.post("/mark", async (req, res) => {
       department: student.department,
       class: student.class,
       date: today,
-      time: (currentTime = moment().format("HH:mm:ss")),
+      time,
       status: isLate ? "Late" : "Present",
       method: method || "Face Recognition",
       confidence: confidence || 0,
@@ -114,7 +120,8 @@ router.get("/", async (req, res) => {
 // GET today's attendance
 router.get("/today", async (req, res) => {
   try {
-    const today = moment().format("YYYY-MM-DD");
+    // YAHAN BADLAAV KIYA: Today ka data nikalte waqt bhi IST timezone check hoga
+    const today = moment().tz(INDIA_TZ).format("YYYY-MM-DD");
     const records = await Attendance.find({ date: today }).sort({ time: -1 });
     const totalStudents = await Student.countDocuments({ isActive: true });
 
@@ -137,8 +144,9 @@ router.get("/today", async (req, res) => {
 // GET stats/dashboard
 router.get("/stats/overview", async (req, res) => {
   try {
-    const today = moment().format("YYYY-MM-DD");
-    const thisMonth = moment().format("YYYY-MM");
+    // YAHAN BADLAAV KIYA: Dashboard filter ko bhi India time zone par set kar diya hai
+    const today = moment().tz(INDIA_TZ).format("YYYY-MM-DD");
+    const thisMonth = moment().tz(INDIA_TZ).format("YYYY-MM");
 
     const [todayRecords, monthRecords, totalStudents, weekRecords] =
       await Promise.all([
@@ -147,7 +155,10 @@ router.get("/stats/overview", async (req, res) => {
         Student.countDocuments({ isActive: true }),
         Attendance.find({
           date: {
-            $gte: moment().subtract(7, "days").format("YYYY-MM-DD"),
+            $gte: moment()
+              .tz(INDIA_TZ)
+              .subtract(7, "days")
+              .format("YYYY-MM-DD"),
             $lte: today,
           },
         }),
@@ -156,8 +167,8 @@ router.get("/stats/overview", async (req, res) => {
     // Weekly chart data
     const weekDays = [];
     for (let i = 6; i >= 0; i--) {
-      const d = moment().subtract(i, "days").format("YYYY-MM-DD");
-      const dayLabel = moment().subtract(i, "days").format("ddd");
+      const d = moment().tz(INDIA_TZ).subtract(i, "days").format("YYYY-MM-DD");
+      const dayLabel = moment().tz(INDIA_TZ).subtract(i, "days").format("ddd");
       const count = weekRecords.filter((r) => r.date === d).length;
       weekDays.push({ date: d, day: dayLabel, count });
     }
