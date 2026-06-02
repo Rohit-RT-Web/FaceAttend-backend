@@ -9,39 +9,51 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || "";
 
-// Middleware
-app.use(cors());
+// ── CORS — Netlify frontend allow karo ──────────────────────
+app.use(
+  cors({
+    origin: [
+      "https://face-attendancs.netlify.app",
+      "http://localhost:3000",
+      "http://localhost:5500",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  }),
+);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+
+// ── Static files ─────────────────────────────────────────────
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".js"))
+        res.setHeader("Content-Type", "application/javascript");
+      if (filePath.endsWith(".css")) res.setHeader("Content-Type", "text/css");
+    },
+  }),
+);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Create uploads directory if not exists
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads", { recursive: true });
 
-// MongoDB Connection
+// ── MongoDB ───────────────────────────────────────────────────
 mongoose
   .connect(MONGODB_URI)
-  .then(() => {
-    console.log("✅ MongoDB Connected:", MONGODB_URI);
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB Connection Error:", err.message);
-    console.log(
-      "⚠️  Server running without database - some features may not work",
-    );
-  });
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Error:", err.message));
 
 mongoose.connection.on("error", (err) => console.error("MongoDB Error:", err));
 mongoose.connection.on("disconnected", () =>
   console.log("MongoDB Disconnected"),
 );
 
-// API Routes
+// ── API Routes ────────────────────────────────────────────────
 app.use("/api/students", require("./routes/students"));
 app.use("/api/attendance", require("./routes/attendance"));
 
-// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -51,12 +63,16 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Serve frontend
+// ── Catch-all — sirf HTML routes ke liye, JS/CSS nahi ────────
 app.get("*", (req, res) => {
+  const ext = path.extname(req.path);
+  if (ext && ext !== ".html") {
+    return res.status(404).json({ error: "Not found" });
+  }
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Global error handler
+// ── Error Handler ─────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res
@@ -65,8 +81,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-  console.log(`📊 Dashboard: http://localhost:${PORT}`);
+  console.log(`🚀 Server: http://localhost:${PORT}`);
 });
 
 module.exports = app;
