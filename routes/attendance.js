@@ -40,7 +40,7 @@ router.post("/mark", async (req, res) => {
       department: student.department,
       class: student.class,
       date: today,
-      time,
+      time: time,
       status: isLate ? "Late" : "Present",
       method: method || "Face Recognition",
       confidence: confidence || 0,
@@ -59,12 +59,10 @@ router.post("/mark", async (req, res) => {
     });
   } catch (err) {
     if (err.code === 11000) {
-      return res
-        .status(409)
-        .json({
-          success: false,
-          message: "Attendance already marked for today",
-        });
+      return res.status(409).json({
+        success: false,
+        message: "Attendance already marked for today",
+      });
     }
     res.status(500).json({ success: false, message: err.message });
   }
