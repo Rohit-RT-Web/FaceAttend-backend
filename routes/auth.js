@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Admin = require("../models/Admin");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // ── Admin seed — pehli baar default admin banao ──────────────
 async function seedAdmin() {
@@ -8,8 +10,8 @@ async function seedAdmin() {
     const exists = await Admin.findOne({});
     if (!exists) {
       await Admin.create({
-        email: "rohitsaini24621@gmail.com",
-        password: "Rohit@639641",
+        email: "admin@faceattend.com",
+        password: "admin@123",
       });
       console.log("✅ Default admin created");
     }
@@ -41,11 +43,7 @@ router.post("/login", async (req, res) => {
         .status(401)
         .json({ success: false, message: "Email ya password galat hai" });
 
-    const token = jwt.sign({ email: admin.email }, process.env.JWT_SECRET, {
-      expiresIn: "8h",
-    });
-
-    res.json({ success: true, email: admin.email, token });
+    res.json({ success: true, email: admin.email });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
