@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const Admin = require("../models/Admin");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 
 // ── Admin seed — pehli baar default admin banao ──────────────
 async function seedAdmin() {
@@ -26,10 +24,12 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password)
-      return res.status(400).json({
-        success: false,
-        message: "Email aur password dono zaroori hain",
-      });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Email aur password dono zaroori hain",
+        });
 
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin)
@@ -70,10 +70,12 @@ router.post("/reset-password", async (req, res) => {
   try {
     const { email, newPassword } = req.body;
     if (!email || !newPassword)
-      return res.status(400).json({
-        success: false,
-        message: "Email aur naya password zaroori hai",
-      });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Email aur naya password zaroori hai",
+        });
 
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin)
