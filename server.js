@@ -13,7 +13,7 @@ const MONGODB_URI = process.env.MONGODB_URI || "";
 app.use(
   cors({
     origin: [
-      "https://face-attendances.netlify.app",
+      "https://face-attendancee.netlify.app",
       "http://localhost:3000",
       "http://localhost:5500",
     ],
