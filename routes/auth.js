@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Admin = require("../models/Admin");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // ── Admin seed — pehli baar default admin banao ──────────────
 async function seedAdmin() {
@@ -8,8 +10,8 @@ async function seedAdmin() {
     const exists = await Admin.findOne({});
     if (!exists) {
       await Admin.create({
-        email: "admin@faceattend.com",
-        password: "admin@123",
+        email: "rohitsaini24621@gmail.com",
+        password: "Rohit@639641",
       });
       console.log("✅ Default admin created");
     }
@@ -24,12 +26,10 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Email aur password dono zaroori hain",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Email aur password dono zaroori hain",
+      });
 
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin)
@@ -43,7 +43,11 @@ router.post("/login", async (req, res) => {
         .status(401)
         .json({ success: false, message: "Email ya password galat hai" });
 
-    res.json({ success: true, email: admin.email });
+    const token = jwt.sign({ email: admin.email }, process.env.JWT_SECRET, {
+      expiresIn: "8h",
+    });
+
+    res.json({ success: true, email: admin.email, token });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
@@ -70,12 +74,10 @@ router.post("/reset-password", async (req, res) => {
   try {
     const { email, newPassword } = req.body;
     if (!email || !newPassword)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Email aur naya password zaroori hai",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Email aur naya password zaroori hai",
+      });
 
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin)
